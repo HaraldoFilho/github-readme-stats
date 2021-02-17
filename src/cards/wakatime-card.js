@@ -6,9 +6,12 @@ const { getCardColors, FlexLayout } = require("../common/utils");
 const { createProgressNode } = require("../common/createProgressNode");
 const languageColors = require("../common/languageColors.json");
 
+const numberOfLanguages = 8;
+const cardWidth = 363;
+
 const noCodingActivityNode = ({ color, text }) => {
   return `
-    <text x="25" y="11" class="stat bold" fill="${color}">${text}</text>
+  <text x="25" y="11" class="stat bold" fill="${color}">${text}</text>
   `;
 };
 
@@ -16,12 +19,12 @@ const createCompactLangNode = ({ lang, totalSize, x, y }) => {
   const color = languageColors[lang.name] || "#858585";
 
   return `
-    <g transform="translate(${x}, ${y})">
-      <circle cx="5" cy="6" r="5" fill="${color}" />
-      <text data-testid="lang-name" x="15" y="10" class='lang-name'>
-        ${lang.name} - ${lang.text}
-      </text>
-    </g>
+  <g transform="translate(${x}, ${y})">
+  <circle cx="5" cy="6" r="5" fill="${color}" />
+  <text data-testid="lang-name" x="15" y="10" class='lang-name'>
+  ${lang.name} - ${lang.text}
+  </text>
+  </g>
   `;
 };
 
@@ -59,33 +62,33 @@ const createTextNode = ({
   const staggerDelay = (index + 3) * 150;
 
   const cardProgress = hideProgress
-    ? null
-    : createProgressNode({
-        x: 110,
-        y: 4,
-        progress: percent,
-        color: progressBarColor,
-        width: 220,
-        name: label,
-        progressBarBackgroundColor,
-      });
+  ? null
+  : createProgressNode({
+    x: 110,
+    y: 4,
+    progress: percent,
+    color: progressBarColor,
+    width: 220,
+    name: label,
+    progressBarBackgroundColor,
+  });
 
   return `
-    <g class="stagger" style="animation-delay: ${staggerDelay}ms" transform="translate(25, 0)">
-      <text class="stat bold" y="12.5">${label}:</text>
-      <text 
-        class="stat" 
-        x="${hideProgress ? 170 : 350}" 
-        y="12.5" 
-        data-testid="${id}"
-      >${value}</text>
-      ${cardProgress}
-    </g>
+  <g class="stagger" style="animation-delay: ${staggerDelay}ms" transform="translate(25, 0)">
+  <text class="stat bold" y="12.5">${label}:</text>
+  <text
+  class="stat"
+  x="${hideProgress ? 170 : 350}"
+  y="12.5"
+  data-testid="${id}"
+  >${value}</text>
+  ${cardProgress}
+  </g>
   `;
 };
 
 const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
-  const { languages } = stats;
+  var { languages } = stats;
   const {
     hide_title = false,
     hide_border = false,
@@ -100,6 +103,19 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
     locale,
     layout,
   } = options;
+
+  var percentTotal = 0;
+
+  if (languages) {
+    if (languages.length > numberOfLanguages) {
+      languages = languages.slice(0,numberOfLanguages);
+    }
+    for (var i = 0; i < languages.length; i++) {
+      percentTotal += languages[i].percent;
+    }
+  } else {
+    percentTotal = 100;
+  }
 
   const i18n = new I18n({
     locale,
@@ -118,20 +134,20 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
   });
 
   const statItems = languages
-    ? languages
-        .filter((language) => language.hours || language.minutes)
-        .map((language) => {
-          return createTextNode({
-            id: language.name,
-            label: language.name,
-            value: language.text,
-            percent: language.percent,
-            progressBarColor: titleColor,
-            progressBarBackgroundColor: textColor,
-            hideProgress: hide_progress,
-          });
-        })
-    : [];
+  ? languages
+  .filter((language) => language.hours || language.minutes)
+  .map((language) => {
+    return createTextNode({
+      id: language.name,
+      label: language.name,
+      value: language.text,
+      percent: language.percent,
+      progressBarColor: titleColor,
+      progressBarBackgroundColor: textColor,
+      hideProgress: hide_progress,
+    });
+  })
+  : [];
 
   // Calculate the card height depending on how many items there are
   // but if rank circle is visible clamp the minimum height to `150`
@@ -145,61 +161,61 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
 
   let finalLayout = "";
 
-  let width = 440;
+  let width = cardWidth;
 
   // RENDER COMPACT LAYOUT
   if (layout === "compact") {
+
+    height = 90 + Math.round(numberOfLanguages/2) * 25;
     width = width + 50;
-    height = 90 + Math.round(languages.length / 2) * 25;
 
     // progressOffset holds the previous language's width and used to offset the next language
     // so that we can stack them one after another, like this: [--][----][---]
     let progressOffset = 0;
     const compactProgressBar = languages
-      .map((lang) => {
-        // const progress = (width * lang.percent) / 100;
-        const progress = ((width - 50) * lang.percent) / 100;
+    .map((lang) => {
+      const progress = ((width-25)*lang.percent) / percentTotal;
 
-        const languageColor = languageColors[lang.name] || "#858585";
+      const languageColor = languageColors[lang.name] || "#858585";
 
-        const output = `
-          <rect
-            mask="url(#rect-mask)" 
-            data-testid="lang-progress"
-            x="${progressOffset}" 
-            y="0"
-            width="${progress}" 
-            height="8"
-            fill="${languageColor}"
-          />
-        `;
-        progressOffset += progress;
-        return output;
-      })
-      .join("");
+      const output = `
+      <rect
+      mask="url(#rect-mask)"
+      data-testid="lang-progress"
+      x="${progressOffset}"
+      y="0"
+      width="${progress}"
+      height="8"
+      fill="${languageColor}"
+      />
+      `;
+      progressOffset += progress;
+      return output;
+    })
+    .join("");
 
     finalLayout = `
-      <mask id="rect-mask">
-      <rect x="25" y="0" width="${width - 50}" height="8" fill="white" rx="5" />
-      </mask>
-      ${compactProgressBar}
-      ${createLanguageTextNode({
-        x: 0,
-        y: 25,
-        langs: languages,
-        totalSize: 100,
-      }).join("")}
+    <mask id="rect-mask">
+    <rect x="25" y="0" width="${width-50}" height="8" fill="white" rx="5" />
+    </mask>
+    ${compactProgressBar}
+    ${createLanguageTextNode({
+      x: 0,
+      y: 25,
+      langs: languages,
+      totalSize: 100,
+    }).join("")}
     `;
   } else {
     finalLayout = FlexLayout({
       items: statItems.length
-        ? statItems
-        : [
-            noCodingActivityNode({
-              color: textColor,
-              text: i18n.t("wakatimecard.nocodingactivity"),
-            }),
-          ],
+      ? statItems
+      : [
+        noCodingActivityNode({
+          color: textColor,
+          text: i18n.t("wakatimecard.nocodingactivity"),
+        }),
+      ],
       gap: lheight,
       direction: "column",
     }).join("");
@@ -208,7 +224,7 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
   const card = new Card({
     customTitle: custom_title,
     defaultTitle: i18n.t("wakatimecard.title"),
-    width: 495,
+    width,
     height,
     colors: {
       titleColor,
@@ -229,10 +245,10 @@ const renderWakatimeCard = (stats = {}, options = { hide: [] }) => {
 
   return card.render(`
     <svg x="0" y="0" width="100%">
-      ${finalLayout}
-    </svg> 
-  `);
-};
+    ${finalLayout}
+    </svg>
+    `);
+  };
 
-module.exports = renderWakatimeCard;
-exports.createProgressNode = createProgressNode;
+  module.exports = renderWakatimeCard;
+  exports.createProgressNode = createProgressNode;
