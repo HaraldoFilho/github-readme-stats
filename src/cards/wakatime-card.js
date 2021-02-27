@@ -7,7 +7,7 @@ const { createProgressNode } = require("../common/createProgressNode");
 const languageColors = require("../common/languageColors.json");
 
 const numberOfLanguages = 8;
-const cardWidth = 363;
+const cardWidth = 413;
 
 const noCodingActivityNode = ({ color, text }) => {
   return `
